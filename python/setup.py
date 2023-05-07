@@ -29,19 +29,24 @@ with open(os.path.join('..', 'include', 'common.h'), 'r') as v_file:
             VERSION = line.split()[-1][2:-1]
             break
 
+root_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
+include_folder = os.path.join(root_folder, "include")
+
 setup(
-    name='classy',
+    name='classy_pt',
     version=VERSION,
     description='Python interface to the Cosmological Boltzmann code CLASS',
     url='http://www.class-code.net',
     cmdclass={'build_ext': build_ext},
-    ext_modules=[Extension("classy", ["classy.pyx"],
-                           include_dirs=[nm.get_include(), "../include","/Users/gcabass/anaconda3/envs/openblas_test/include"],
+    ext_modules=[Extension("classy_pt", ["classy.pyx"],
+                           # include_dirs=[nm.get_include(), "../include","/Users/gcabass/anaconda3/envs/openblas_test/include"],
+                           include_dirs=[nm.get_include(),include_folder],#, "../include","/Users/gcabass/anaconda3/envs/openblas_test/include"],
                            libraries=liblist,
                            library_dirs=["../", GCCPATH],
-                           extra_link_args=['/Users/gcabass/anaconda3/envs/openblas_test/lib/libopenblas.dylib','-lgomp'],
-                           )],
+                           # extra_link_args=['/Users/gcabass/anaconda3/envs/openblas_test/lib/libopenblas.dylib','-lgomp'],
+                           extra_link_args=['/Users/boris/opt/miniconda3/lib/libopenblas_armv8p-r0.3.21.dylib','-lomp','-L/Users/boris/opt/miniconda3/lib','-lgsl','-lfftw3','-lgslcblas'])
+                           ] # BB
+
+                           # )],
     #data_files=[('bbn', ['../bbn/sBBN.dat'])]
 )
-
-

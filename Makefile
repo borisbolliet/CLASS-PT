@@ -17,9 +17,11 @@ vpath .base build
 ########################################################
 
 # your C compiler:
-CC       = gcc
+# CC       = gcc
 #CC       = icc
 #CC       = pgcc
+# on Mac M1:
+CC       = /usr/bin/clang
 
 # your tool for creating static libraries:
 AR        = ar rv
@@ -38,21 +40,26 @@ OPTFLAG = -O4 -ffast-math
 #OPTFLAG = -fast
 
 # your openmp flag (comment for compiling without openmp)
-OMPFLAG   = -fopenmp
+# OMPFLAG   = -fopenmp
+
+OMPFLAG   = -Xclang -fopenmp
 #OMPFLAG   = -mp -mp=nonuma -mp=allcores -g
 #OMPFLAG   = -openmp
 
 # all other compilation flags
-CCFLAG = -g -fPIC -ggdb3
+CCFLAG = -g -fPIC # -ggdb3
 LDFLAG = -g -fPIC
 
+
+#on Mac M1
+LDFLAG += -lomp
 # leave blank to compile without HyRec, or put path to HyRec directory
 # (with no slash at the end: e.g. hyrec or ../hyrec)
 HYREC = hyrec
 
 #put your path to libopenblas.a here
-OPENBLAS = /Users/gcabass/anaconda3/envs/openblas_test/lib/libopenblas.dylib
-
+#OPENBLAS = /Users/gcabass/anaconda3/envs/openblas_test/lib/libopenblas.dylib
+OPENBLAS = /Users/boris/opt/miniconda3/lib/libopenblas_armv8p-r0.3.21.dylib
 ########################################################
 ###### IN PRINCIPLE THE REST SHOULD BE LEFT UNCHANGED ##
 ########################################################
@@ -61,7 +68,7 @@ OPENBLAS = /Users/gcabass/anaconda3/envs/openblas_test/lib/libopenblas.dylib
 CCFLAG += -D__CLASSDIR__='"$(MDIR)"'
 
 # where to find include files *.h
-INCLUDES = -I../include
+INCLUDES = -I../include -I/usr/local/include/ -I/Users/boris/opt/miniconda3/include/
 
 # automatically add external programs if needed. First, initialize to blank.
 EXTERNAL =
@@ -106,7 +113,7 @@ LENSING = lensing.o
 
 OUTPUT = output.o
 
-CLASS = class.o
+CLASS_PT = class_pt.o
 
 TEST_LOOPS = test_loops.o
 
@@ -141,13 +148,13 @@ INI_ALL = explanatory.ini lcdm.ini
 MISC_FILES = Makefile CPU psd_FD_single.dat myselection.dat myevolution.dat README bbn/sBBN.dat external_Pk/* cpp
 PYTHON_FILES = python/classy.pyx python/setup.py python/cclassy.pxd python/test_class.py
 
-all: class libclass.a classy
+all: class_pt libclass.a classy_pt
 
 libclass.a: $(TOOLS) $(SOURCE) $(EXTERNAL)
 	$(AR)  $@ $(addprefix build/, $(TOOLS) $(SOURCE) $(EXTERNAL))
 
-class: $(TOOLS) $(SOURCE) $(EXTERNAL) $(OUTPUT) $(CLASS)
-	$(CC) $(OPTFLAG) $(OMPFLAG) $(LDFLAG) -o class $(addprefix build/,$(notdir $^)) $(OPENBLAS) -lpthread -lm
+class_pt: $(TOOLS) $(SOURCE) $(EXTERNAL) $(OUTPUT) $(CLASS_PT)
+	$(CC) $(OPTFLAG) $(OMPFLAG) $(LDFLAG) -o class_pt $(addprefix build/,$(notdir $^)) $(OPENBLAS) -lpthread -lm -lgsl -lgslcblas -lfftw3 -L/Users/boris/opt/miniconda3/lib
 
 test_sigma: $(TOOLS) $(SOURCE) $(EXTERNAL) $(OUTPUT) $(TEST_SIGMA)
 	$(CC) $(OPTFLAG) $(OMPFLAG) $(LDFLAG) -o test_sigma $(addprefix build/,$(notdir $^)) -lm
@@ -186,7 +193,7 @@ test_hyperspherical: $(TOOLS) $(TEST_HYPERSPHERICAL)
 tar: $(C_ALL) $(C_TEST) $(H_ALL) $(PRE_ALL) $(INI_ALL) $(MISC_FILES) $(HYREC) $(PYTHON_FILES)
 	tar czvf class.tar.gz $(C_ALL) $(H_ALL) $(PRE_ALL) $(INI_ALL) $(MISC_FILES) $(HYREC) $(PYTHON_FILES)
 
-classy: libclass.a python/classy.pyx python/cclassy.pxd
+classy_pt: libclass.a python/classy.pyx python/cclassy.pxd
 ifdef OMPFLAG
 	cp python/setup.py python/autosetup.py
 else
@@ -200,5 +207,3 @@ clean: .base
 	rm -f libclass.a
 	rm -f $(MDIR)/python/classy.c
 	rm -rf $(MDIR)/python/build
-
-
